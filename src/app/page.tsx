@@ -92,10 +92,19 @@ function FrameContent() {
       return;
     }
 
+    // TODO: Replace with actual NFT contract address before production deployment
+    // This is a placeholder address for demonstration purposes
+    const contractAddress = '0x0000000000000000000000000000000000000000';
+    
+    if (contractAddress === '0x0000000000000000000000000000000000000000') {
+      alert('⚠️ Contract address not configured. Please set a valid NFT contract address in the code.');
+      return;
+    }
+
     // Send a transaction (example: sending 0.001 ETH to a contract)
     // In a real scenario, this would be a contract interaction to mint an NFT badge
     sendTransaction({
-      to: '0x0000000000000000000000000000000000000000', // Replace with actual contract address
+      to: contractAddress,
       value: parseEther('0.001'),
     });
   };

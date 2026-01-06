@@ -2,8 +2,13 @@ import { Client } from 'fortnite-replay-info';
 
 // Initialize the Fortnite client with API key from environment variable
 // Get your API key from https://replayinfo.com
-const apiKey = process.env.FORTNITE_API_KEY || 'demo-api-key';
-const fortniteClient = new Client(apiKey);
+const apiKey = process.env.FORTNITE_API_KEY;
+
+if (!apiKey) {
+  console.warn('FORTNITE_API_KEY environment variable is not set. API calls will fail.');
+}
+
+const fortniteClient = apiKey ? new Client(apiKey) : null;
 
 /**
  * Fetches player stats for a specific username
@@ -11,6 +16,14 @@ const fortniteClient = new Client(apiKey);
  * @returns Player stats including username, wins, kills, etc.
  */
 export async function getPlayerStats(username: string) {
+  if (!fortniteClient) {
+    return {
+      success: false,
+      error: 'Fortnite API key is not configured. Please set FORTNITE_API_KEY environment variable.',
+      data: null
+    };
+  }
+
   try {
     // Fetch player stats for the current season/version
     const stats = await fortniteClient.getStats(username, 'current');

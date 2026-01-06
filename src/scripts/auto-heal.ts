@@ -66,13 +66,28 @@ async function runHealthMonitor() {
   console.log(`   Monitoring endpoint: ${HEALTH_ENDPOINT}`);
   console.log(`   Check interval: ${CHECK_INTERVAL / 1000}s\n`);
 
+  let isChecking = false;
+
+  // Function to run periodic checks without overlapping
+  const performCheck = async () => {
+    if (isChecking) {
+      console.log('⏭️  Skipping check - previous check still in progress');
+      return;
+    }
+
+    isChecking = true;
+    try {
+      await checkHealth();
+    } finally {
+      isChecking = false;
+    }
+  };
+
   // Run initial check
-  await checkHealth();
+  await performCheck();
 
   // Set up periodic checks
-  setInterval(async () => {
-    await checkHealth();
-  }, CHECK_INTERVAL);
+  setInterval(performCheck, CHECK_INTERVAL);
 }
 
 // Run the health monitor

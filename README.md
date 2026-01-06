@@ -2,6 +2,8 @@
 
 A Farcaster Frame (v2) project that integrates Fortnite game data with smart wallet transactions, optimized for Vercel deployment.
 
+![FortniteFrame UI](https://github.com/user-attachments/assets/34c56a3c-fecf-4c9d-b057-bc24803ef780)
+
 ## Features
 
 - 🎮 **Fortnite Stats Integration**: Fetch and display player statistics using the `fortnite-replay-info` library
@@ -40,6 +42,17 @@ FortniteFrame/
 ```bash
 npm install
 ```
+
+### Environment Setup
+
+Copy the example environment file and add your API keys:
+
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` and add your Fortnite API key:
+- Get your API key from [https://replayinfo.com](https://replayinfo.com)
 
 ### Development
 
