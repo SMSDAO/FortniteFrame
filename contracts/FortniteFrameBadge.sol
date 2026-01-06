@@ -159,6 +159,19 @@ contract FortniteFrameBadge is Ownable, ReentrancyGuard, Pausable {
         // the client MUST request a new signature with the updated nonce value.
         // Do not cache or reuse signatures across failed transactions.
         usedSignatures[digest] = true;
+        /**
+         * IMPORTANT INTEGRATION NOTE:
+         * - The recipient's nonce is part of the signed payload (see structHash construction).
+         * - Once a signature is successfully verified, the nonce is incremented here.
+         * - This makes each backend signature strictly single-use: it cannot be reused in
+         *   a subsequent transaction, even if the original transaction fails/reverts later.
+         *
+         * Frontend / backend implication:
+         * - If a mint transaction fails after this point, the client MUST request a new
+         *   signature that uses the updated `nonces[recipient]` value.
+         * - Do not cache and reuse old signatures across failed transactions; always fetch
+         *   a fresh signature when the previous transaction does not succeed.
+         */
         nonces[recipient]++;
 
         // Take platform fee and transfer to reserve wallet
