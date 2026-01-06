@@ -97,7 +97,13 @@ app.post('/api/generate-badge-signature', async (req, res) => {
     // Fetch Fortnite stats (simplified)
     const fortniteStats = await fetchFortniteStats(fortniteUsername);
     
-    // Validate stats meet badge criteria
+    // Validate stats exist and meet badge criteria
+    if (!fortniteStats || typeof fortniteStats.wins !== 'number') {
+      return res.status(400).json({ 
+        error: 'Failed to fetch valid Fortnite stats'
+      });
+    }
+    
     if (fortniteStats.wins < 10) {
       return res.status(400).json({ 
         error: 'Insufficient stats for badge',
@@ -118,13 +124,19 @@ app.post('/api/generate-badge-signature', async (req, res) => {
     const priceWei = ethers.parseEther('0.001'); // 0.001 ETH
     const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
 
+    // Validate and convert nonce to BigInt
+    const nonceValue = typeof nonce === 'number' ? nonce : parseInt(nonce, 10);
+    if (isNaN(nonceValue)) {
+      return res.status(400).json({ error: 'Invalid nonce value' });
+    }
+
     // Create signature value
     const value = {
       recipient,
       fortniteHash,
       priceWei,
       deadline,
-      nonce: BigInt(nonce),
+      nonce: BigInt(nonceValue),
     };
 
     // Sign the typed data
@@ -150,9 +162,10 @@ app.post('/api/generate-badge-signature', async (req, res) => {
 });
 
 async function fetchFortniteStats(username) {
-  // Implementation depends on your Fortnite API client
-  // This is a placeholder
-  const response = await fetch(`/api/fortnite?user=${username}`);
+  // Implementation depends on your Fortnite API client or Next.js API route.
+  // If this Express backend runs separately from your Next.js app,
+  // use the full URL to your stats endpoint instead of a relative path.
+  const response = await fetch(`https://your-nextjs-app.com/api/fortnite?user=${username}`);
   return response.json();
 }
 
@@ -224,9 +237,16 @@ function FrameContent() {
 
       const { signature, params } = await response.json();
 
+      // Validate contract address exists
+      const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`;
+      if (!contractAddress || contractAddress === '0x0000000000000000000000000000000000000000') {
+        alert('Contract address not configured');
+        return;
+      }
+
       // Call smart contract
       const result = await writeContract({
-        address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
+        address: contractAddress,
         abi: FORTNITE_FRAME_BADGE_ABI,
         functionName: 'mintBadge',
         args: [

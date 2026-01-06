@@ -190,10 +190,6 @@ Quick deployment steps:
 
 For detailed instructions, see [DEPLOYMENT.md](./DEPLOYMENT.md) and [contracts/README.md](./contracts/README.md).
 
-1. Push your code to a GitHub repository
-2. Import the project in Vercel
-3. Deploy with default settings
-
 ## Environment Variables
 
 For production deployment, you may want to set:

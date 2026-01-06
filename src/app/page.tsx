@@ -71,7 +71,14 @@ function FrameContent() {
       const response = await axios.get(`/api/fortnite?user=${encodeURIComponent(username)}`);
       setStats(response.data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch stats');
+      if (axios.isAxiosError(err)) {
+        const message = err.response?.data?.error || err.message || 'Failed to fetch stats';
+        setError(message);
+      } else if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('Failed to fetch stats');
+      }
     } finally {
       setLoading(false);
     }
@@ -94,19 +101,24 @@ function FrameContent() {
 
     // Configure with your deployed contract address
     // After deploying FortniteFrameBadge.sol to Base, update this address
-    const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000';
-    
-    if (contractAddress === '0x0000000000000000000000000000000000000000') {
+    const envContractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS;
+
+    if (!envContractAddress || envContractAddress === '0x0000000000000000000000000000000000000000') {
       alert('⚠️ Contract address not configured. Please deploy the FortniteFrameBadge contract and set NEXT_PUBLIC_CONTRACT_ADDRESS in your environment variables.');
       return;
     }
 
-    // TODO: Implement full contract integration with signature generation
-    // For now, sending a simple transaction as placeholder
+    const contractAddress = envContractAddress;
+
+    // WARNING: This is a placeholder implementation that will fail in production
+    // This sends ETH directly to the contract without calling mintBadge()
     // Full integration requires:
     // 1. Backend endpoint to generate EIP-712 signature
-    // 2. Call contract.mintBadge() with proper parameters
-    // 3. See contracts/README.md for integration details
+    // 2. Call contract.mintBadge() with proper parameters (recipient, fortniteHash, priceWei, deadline, signature)
+    // 3. See contracts/README.md and INTEGRATION.md for complete implementation details
+    // 4. Until properly implemented, this will only deposit ETH to the contract without minting a badge
+    
+    alert('⚠️ Placeholder implementation. This will send ETH to the contract but will NOT mint a badge. See INTEGRATION.md for proper implementation.');
     
     sendTransaction({
       to: contractAddress,

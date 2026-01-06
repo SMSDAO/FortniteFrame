@@ -48,16 +48,19 @@ export async function getPlayerStats(username: string) {
         wins: totalWins,
         kills: totalKills,
         matches: totalMatches,
-        winRate: totalWins && totalMatches 
+        winRate: totalMatches > 0
           ? ((totalWins / totalMatches) * 100).toFixed(2) 
           : '0.00'
       }
     };
   } catch (error) {
     console.error('Error fetching Fortnite stats:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch stats';
+    
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch stats',
+      error: errorMessage,
       data: null
     };
   }

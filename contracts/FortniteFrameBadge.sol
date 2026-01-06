@@ -155,6 +155,9 @@ contract FortniteFrameBadge is Ownable, ReentrancyGuard, Pausable {
         require(signer == authorizedRelayer, "Invalid signature");
 
         // Mark signature as used and increment nonce
+        // IMPORTANT: Each signature is single-use. If a transaction fails after this point,
+        // the client MUST request a new signature with the updated nonce value.
+        // Do not cache or reuse signatures across failed transactions.
         usedSignatures[digest] = true;
         nonces[recipient]++;
 
@@ -171,8 +174,10 @@ contract FortniteFrameBadge is Ownable, ReentrancyGuard, Pausable {
 
     /**
      * @notice Calculates and transfers platform fee to reserve wallet
+     * @dev Transfers fee using push pattern. Reserve wallet must be able to receive ETH.
+     *      If reserve wallet is a contract, it must have receive() or fallback() function.
      * @param amount Total amount received
-     * @return netAmount Amount after fee deduction
+     * @return netAmount Amount after fee deduction (reserved for future use)
      * @return feeAmount Platform fee amount
      */
     function _takePlatformFee(uint256 amount) 
@@ -299,8 +304,14 @@ contract FortniteFrameBadge is Ownable, ReentrancyGuard, Pausable {
 
     // ============ Receive Function ============
 
+    /// @notice Emitted when ETH is received directly
+    event Received(address indexed sender, uint256 amount);
+
     /**
      * @notice Allows contract to receive ETH directly
+     * @dev Emits Received event for tracking unexpected ETH deposits
      */
-    receive() external payable {}
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
+    }
 }

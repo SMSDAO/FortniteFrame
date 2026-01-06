@@ -23,26 +23,17 @@ async function checkHealth(): Promise<HealthCheckResult> {
   try {
     const response = await axios.get(HEALTH_ENDPOINT, {
       timeout: 10000,
-      validateStatus: (status) => status < 500, // Accept 4xx as "working"
+      validateStatus: (status) => status >= 200 && status < 300, // Only 2xx is healthy
     });
 
     const responseTime = Date.now() - startTime;
 
-    if (response.status < 500) {
-      console.log(`✅ [${timestamp}] Service is HEALTHY - Response time: ${responseTime}ms`);
-      return {
-        status: 'healthy',
-        timestamp,
-        responseTime,
-      };
-    } else {
-      console.log(`⚠️  [${timestamp}] Service returned error status: ${response.status}`);
-      return {
-        status: 'unhealthy',
-        timestamp,
-        error: `HTTP ${response.status}`,
-      };
-    }
+    console.log(`✅ [${timestamp}] Service is HEALTHY - Response time: ${responseTime}ms`);
+    return {
+      status: 'healthy',
+      timestamp,
+      responseTime,
+    };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error(`❌ [${timestamp}] Service is UNHEALTHY - Error: ${errorMessage}`);

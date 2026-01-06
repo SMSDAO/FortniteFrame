@@ -26,7 +26,7 @@ async function main() {
   }
 
   if (!AUTHORIZED_RELAYER) {
-    console.warn("⚠️  Warning: AUTHORIZED_RELAYER not set. Signatures will fail validation.");
+    throw new Error("❌ AUTHORIZED_RELAYER must be set for production deployments. Set this environment variable to the backend signer address that will generate EIP-712 signatures.");
   }
 
   // Get deployer
@@ -41,7 +41,7 @@ async function main() {
   const contract = await FortniteFrameBadge.deploy(
     RESERVE_WALLET,
     parseInt(PLATFORM_FEE_BPS),
-    AUTHORIZED_RELAYER || deployer.address // Use deployer as fallback
+    AUTHORIZED_RELAYER
   );
 
   await contract.waitForDeployment();
@@ -67,7 +67,7 @@ async function main() {
     deployer: deployer.address,
     reserveWallet: RESERVE_WALLET,
     platformFeeBps: PLATFORM_FEE_BPS,
-    authorizedRelayer: AUTHORIZED_RELAYER || deployer.address,
+    authorizedRelayer: AUTHORIZED_RELAYER,
     timestamp: new Date().toISOString(),
     blockNumber: await hre.ethers.provider.getBlockNumber(),
   };
@@ -78,7 +78,7 @@ async function main() {
   // Verification reminder
   if (hre.network.name !== "hardhat" && hre.network.name !== "localhost") {
     console.log("📝 To verify the contract on Basescan, run:");
-    console.log(`   npx hardhat verify --network ${hre.network.name} ${contractAddress} "${RESERVE_WALLET}" ${PLATFORM_FEE_BPS} "${AUTHORIZED_RELAYER || deployer.address}"`);
+    console.log(`   npx hardhat verify --network ${hre.network.name} ${contractAddress} "${RESERVE_WALLET}" ${PLATFORM_FEE_BPS} "${AUTHORIZED_RELAYER}"`);
     console.log();
   }
 
