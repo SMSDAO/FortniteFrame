@@ -4,11 +4,94 @@
 
 Before deploying FortniteFrame, ensure you have:
 
-1. A [Vercel account](https://vercel.com/signup)
+1. A [Vercel account](https://vercel.com/signup) for frontend deployment
 2. A [Fortnite Replay Info API key](https://replayinfo.com)
 3. Your GitHub repository connected to Vercel
+4. ETH on Base network for smart contract deployment (optional)
+5. A wallet with private key for contract deployment (optional)
 
-## Vercel Deployment Steps
+## Part 1: Smart Contract Deployment (Base Blockchain)
+
+### Prerequisites for Smart Contract
+
+1. **Install Dependencies**:
+```bash
+npm install
+```
+
+2. **Configure Environment Variables**:
+
+Copy `.env.example` to `.env` and configure:
+
+```bash
+# Required for contract deployment
+PRIVATE_KEY=your-wallet-private-key
+RESERVE_WALLET=0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb  # gxqstudio.eth
+PLATFORM_FEE_BPS=250  # 2.5%
+AUTHORIZED_RELAYER=your-backend-signer-address
+BASESCAN_API_KEY=your-basescan-api-key
+
+# RPC URLs (defaults provided)
+BASE_RPC_URL=https://mainnet.base.org
+BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
+```
+
+### Deploy Smart Contract
+
+#### Step 1: Compile Contract
+
+```bash
+npm run compile
+```
+
+This will compile the `FortniteFrameBadge.sol` contract.
+
+#### Step 2: Deploy to Base Sepolia (Testnet)
+
+For testing:
+
+```bash
+npm run deploy:baseSepolia
+```
+
+#### Step 3: Deploy to Base Mainnet (Production)
+
+For production:
+
+```bash
+npm run deploy:base
+```
+
+The deployment script will output:
+- Contract address
+- Deployment transaction hash
+- Configuration details
+- Verification command
+
+#### Step 4: Verify Contract
+
+After deployment, verify on Basescan:
+
+```bash
+npx hardhat verify --network base <CONTRACT_ADDRESS> "<RESERVE_WALLET>" <PLATFORM_FEE_BPS> "<AUTHORIZED_RELAYER>"
+```
+
+Example:
+```bash
+npx hardhat verify --network base 0x123abc... "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb" 250 "0x456def..."
+```
+
+### Testing Smart Contract
+
+Run comprehensive tests:
+
+```bash
+npm run test:contract
+```
+
+See `contracts/README.md` for detailed contract documentation.
+
+## Part 2: Frontend Deployment (Vercel)
 
 ### 1. Import Project to Vercel
 

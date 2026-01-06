@@ -92,17 +92,22 @@ function FrameContent() {
       return;
     }
 
-    // TODO: Replace with actual NFT contract address before production deployment
-    // This is a placeholder address for demonstration purposes
-    const contractAddress = '0x0000000000000000000000000000000000000000';
+    // Configure with your deployed contract address
+    // After deploying FortniteFrameBadge.sol to Base, update this address
+    const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || '0x0000000000000000000000000000000000000000';
     
     if (contractAddress === '0x0000000000000000000000000000000000000000') {
-      alert('⚠️ Contract address not configured. Please set a valid NFT contract address in the code.');
+      alert('⚠️ Contract address not configured. Please deploy the FortniteFrameBadge contract and set NEXT_PUBLIC_CONTRACT_ADDRESS in your environment variables.');
       return;
     }
 
-    // Send a transaction (example: sending 0.001 ETH to a contract)
-    // In a real scenario, this would be a contract interaction to mint an NFT badge
+    // TODO: Implement full contract integration with signature generation
+    // For now, sending a simple transaction as placeholder
+    // Full integration requires:
+    // 1. Backend endpoint to generate EIP-712 signature
+    // 2. Call contract.mintBadge() with proper parameters
+    // 3. See contracts/README.md for integration details
+    
     sendTransaction({
       to: contractAddress,
       value: parseEther('0.001'),
