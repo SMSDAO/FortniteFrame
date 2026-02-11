@@ -1,7 +1,7 @@
 import next from 'eslint-config-next/core-web-vitals';
 
 const config = [
-  ...next,
+  ...(Array.isArray(next) ? next : [next]),
   {
     ignores: [
       '.next/**',
