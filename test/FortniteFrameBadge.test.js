@@ -312,7 +312,11 @@ describe("FortniteFrameBadge", function () {
       // Create a different badge to bypass "already minted" check
       const newHash = ethers.keccak256(ethers.toUtf8Bytes("player2-stats"));
       
-      // Try to reuse the same signature (should fail at signature validation)
+      // Try to reuse the same signature with different parameters
+      // This should fail with "Invalid signature" because:
+      // 1. The signature was created for a specific fortniteHash and nonce
+      // 2. We're trying to use it with a different fortniteHash
+      // 3. Even if the hash was the same, the nonce has been incremented
       await expect(
         contract.connect(user).mintBadge(
           user.address,
@@ -322,7 +326,7 @@ describe("FortniteFrameBadge", function () {
           signature,
           { value: MINT_PRICE }
         )
-      ).to.be.revertedWith("Signature already used");
+      ).to.be.revertedWith("Invalid signature");
     });
 
     it("Should not mint when paused", async function () {
