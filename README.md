@@ -8,6 +8,17 @@ A Farcaster Frame (v2) project that integrates Fortnite game data with smart wal
 
 > **Production Deployment**: This application is optimized for Vercel with automated CI/CD and environment variable management.
 
+## ⚡ Requirements
+
+- **Node.js**: 24.0.0 or higher (LTS recommended)
+- **npm**: 10.0.0 or higher
+
+Check your versions:
+```bash
+node --version  # Should be v24.0.0 or higher
+npm --version   # Should be 10.0.0 or higher
+```
+
 ## Features
 
 - 🎮 **Fortnite Stats Integration**: Fetch and display player statistics using the `fortnite-replay-info` library
