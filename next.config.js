@@ -8,6 +8,10 @@ const nextConfig = {
   // Webpack configuration
   webpack: (config, { isServer }) => {
     // Exclude heavy dependencies from client bundle
+    // These are server-only or cause bundling issues in the browser:
+    // - pino-pretty: Pretty printing for logs (server-only)
+    // - lokijs: In-memory database (not needed in browser)
+    // - encoding: Text encoding utilities (node-specific)
     config.externals.push('pino-pretty', 'lokijs', 'encoding')
     
     // Optimize bundle size
