@@ -1,0 +1,28 @@
+# Test files
+test/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# Smart contract artifacts
+artifacts/
+cache/
+typechain-types/
+
+# Documentation
+DEPLOYMENT.md
+INTEGRATION.md
+
+# Local environment
+.env
+.env.local
+.env*.local
+
+# Hardhat
+hardhat.config.js
+scripts/deploy.js
+
+# Development files
+.eslintrc*
+.prettierrc*
