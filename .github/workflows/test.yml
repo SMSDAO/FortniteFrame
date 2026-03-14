@@ -29,3 +29,9 @@ jobs:
       
       - name: Lint
         run: npm run lint
+      
+      - name: Build verification
+        run: npm run build
+        env:
+          FORTNITE_API_KEY: test-api-key
+          NEXT_PUBLIC_CONTRACT_ADDRESS: 0x0000000000000000000000000000000000000000

@@ -1,10 +1,9 @@
 {
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
-  "installCommand": "npm install",
+  "installCommand": "npm ci",
   "framework": "nextjs",
   "env": {
-    "FORTNITE_API_KEY": "@fortnite_api_key",
-    "NEXT_PUBLIC_CONTRACT_ADDRESS": "@contract_address"
+    "FORTNITE_API_KEY": "@fortnite_api_key"
   }
 }
