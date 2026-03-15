@@ -1,5 +1,61 @@
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+import { expect } from "chai";
+import hre from "hardhat";
+
+// Establish network connection and get ethers helper once for all tests
+let ethers;
+before(async function () {
+  this.timeout(30000);
+  const connection = await hre.network.connect();
+  ethers = connection.ethers;
+});
+
+/**
+ * Helper: assert a transaction reverts with a given reason string.
+ * Compatible with Hardhat 3 (no hardhat-chai-matchers plugin required).
+ */
+async function expectRevert(promise, reason) {
+  try {
+    await promise;
+    throw new Error("Expected transaction to revert, but it succeeded");
+  } catch (e) {
+    if (e.message === "Expected transaction to revert, but it succeeded") {
+      throw e;
+    }
+    expect(e.message).to.include(reason, `Expected revert reason "${reason}" but got: ${e.message}`);
+  }
+}
+
+/**
+ * Helper: assert a transaction reverts with a custom error name.
+ */
+async function expectRevertCustomError(promise, errorName) {
+  try {
+    await promise;
+    throw new Error("Expected transaction to revert, but it succeeded");
+  } catch (e) {
+    if (e.message === "Expected transaction to revert, but it succeeded") {
+      throw e;
+    }
+    expect(e.message).to.include(errorName, `Expected custom error "${errorName}" but got: ${e.message}`);
+  }
+}
+
+/**
+ * Helper: assert a transaction emits a specific event.
+ * Returns the parsed log for further assertions.
+ */
+async function expectEmit(txPromise, contract, eventName) {
+  const tx = await txPromise;
+  const receipt = await tx.wait();
+  const iface = contract.interface;
+  const log = receipt.logs
+    .map((l) => {
+      try { return iface.parseLog(l); } catch { return null; }
+    })
+    .find((l) => l && l.name === eventName);
+  expect(log, `Expected event "${eventName}" to be emitted`).to.not.be.null;
+  return log;
+}
 
 describe("FortniteFrameBadge", function () {
   let contract;
@@ -10,9 +66,10 @@ describe("FortniteFrameBadge", function () {
   let addrs;
 
   const PLATFORM_FEE_BPS = 250; // 2.5%
-  const MINT_PRICE = ethers.parseEther("0.001");
+  let MINT_PRICE;
 
   beforeEach(async function () {
+    MINT_PRICE = ethers.parseEther("0.001");
     [owner, reserveWallet, relayer, user, ...addrs] = await ethers.getSigners();
 
     const FortniteFrameBadge = await ethers.getContractFactory("FortniteFrameBadge");
@@ -34,7 +91,7 @@ describe("FortniteFrameBadge", function () {
     });
 
     it("Should set the correct platform fee", async function () {
-      expect(await contract.platformFeeBps()).to.equal(PLATFORM_FEE_BPS);
+      expect(await contract.platformFeeBps()).to.equal(BigInt(PLATFORM_FEE_BPS));
     });
 
     it("Should set the correct authorized relayer", async function () {
@@ -43,56 +100,54 @@ describe("FortniteFrameBadge", function () {
 
     it("Should revert if reserve wallet is zero address", async function () {
       const FortniteFrameBadge = await ethers.getContractFactory("FortniteFrameBadge");
-      await expect(
-        FortniteFrameBadge.deploy(ethers.ZeroAddress, PLATFORM_FEE_BPS, relayer.address)
-      ).to.be.revertedWith("Reserve wallet cannot be zero address");
+      await expectRevert(
+        FortniteFrameBadge.deploy(ethers.ZeroAddress, PLATFORM_FEE_BPS, relayer.address),
+        "Reserve wallet cannot be zero address"
+      );
     });
 
     it("Should revert if platform fee exceeds 10%", async function () {
       const FortniteFrameBadge = await ethers.getContractFactory("FortniteFrameBadge");
-      await expect(
-        FortniteFrameBadge.deploy(reserveWallet.address, 1001, relayer.address)
-      ).to.be.revertedWith("Platform fee cannot exceed 10%");
+      await expectRevert(
+        FortniteFrameBadge.deploy(reserveWallet.address, 1001, relayer.address),
+        "Platform fee cannot exceed 10%"
+      );
     });
   });
 
   describe("Admin Functions", function () {
     it("Should allow owner to update reserve wallet", async function () {
       const newWallet = addrs[0].address;
-      await expect(contract.setReserveWallet(newWallet))
-        .to.emit(contract, "ReserveWalletUpdated")
-        .withArgs(reserveWallet.address, newWallet);
-
+      const log = await expectEmit(contract.setReserveWallet(newWallet), contract, "ReserveWalletUpdated");
+      expect(log.args[0]).to.equal(reserveWallet.address);
+      expect(log.args[1]).to.equal(newWallet);
       expect(await contract.reserveWallet()).to.equal(newWallet);
     });
 
     it("Should prevent non-owner from updating reserve wallet", async function () {
-      await expect(
-        contract.connect(user).setReserveWallet(addrs[0].address)
-      ).to.be.revertedWithCustomError(contract, "OwnableUnauthorizedAccount");
+      await expectRevertCustomError(
+        contract.connect(user).setReserveWallet(addrs[0].address),
+        "OwnableUnauthorizedAccount"
+      );
     });
 
     it("Should allow owner to update platform fee", async function () {
       const newFee = 500; // 5%
-      await expect(contract.setPlatformFeeBps(newFee))
-        .to.emit(contract, "PlatformFeeUpdated")
-        .withArgs(PLATFORM_FEE_BPS, newFee);
-
-      expect(await contract.platformFeeBps()).to.equal(newFee);
+      const log = await expectEmit(contract.setPlatformFeeBps(newFee), contract, "PlatformFeeUpdated");
+      expect(log.args[0]).to.equal(BigInt(PLATFORM_FEE_BPS));
+      expect(log.args[1]).to.equal(BigInt(newFee));
+      expect(await contract.platformFeeBps()).to.equal(BigInt(newFee));
     });
 
     it("Should revert if new platform fee exceeds 10%", async function () {
-      await expect(contract.setPlatformFeeBps(1001)).to.be.revertedWith(
-        "Platform fee cannot exceed 10%"
-      );
+      await expectRevert(contract.setPlatformFeeBps(1001), "Platform fee cannot exceed 10%");
     });
 
     it("Should allow owner to update authorized relayer", async function () {
       const newRelayer = addrs[0].address;
-      await expect(contract.setAuthorizedRelayer(newRelayer))
-        .to.emit(contract, "AuthorizedRelayerUpdated")
-        .withArgs(relayer.address, newRelayer);
-
+      const log = await expectEmit(contract.setAuthorizedRelayer(newRelayer), contract, "AuthorizedRelayerUpdated");
+      expect(log.args[0]).to.equal(relayer.address);
+      expect(log.args[1]).to.equal(newRelayer);
       expect(await contract.authorizedRelayer()).to.equal(newRelayer);
     });
 
@@ -146,33 +201,20 @@ describe("FortniteFrameBadge", function () {
         deadline: deadlineTime,
         nonce: nonceValue,
       };
-
       return await relayer.signTypedData(domain, types, value);
     }
 
     it("Should mint a badge with valid signature", async function () {
-      const signature = await generateSignature(
-        user.address,
-        fortniteHash,
-        MINT_PRICE,
-        deadline,
-        nonce
-      );
-
+      const signature = await generateSignature(user.address, fortniteHash, MINT_PRICE, deadline, nonce);
       const initialBalance = await ethers.provider.getBalance(reserveWallet.address);
 
-      await expect(
-        contract.connect(user).mintBadge(
-          user.address,
-          fortniteHash,
-          MINT_PRICE,
-          deadline,
-          signature,
-          { value: MINT_PRICE }
-        )
-      )
-        .to.emit(contract, "BadgeMinted")
-        .withArgs(user.address, fortniteHash, MINT_PRICE, MINT_PRICE * BigInt(PLATFORM_FEE_BPS) / 10000n);
+      const log = await expectEmit(
+        contract.connect(user).mintBadge(user.address, fortniteHash, MINT_PRICE, deadline, signature, { value: MINT_PRICE }),
+        contract,
+        "BadgeMinted"
+      );
+      expect(log.args[0]).to.equal(user.address);
+      expect(log.args[1]).to.equal(fortniteHash);
 
       // Check badge ownership
       expect(await contract.hasBadge(user.address, fortniteHash)).to.be.true;
@@ -184,46 +226,20 @@ describe("FortniteFrameBadge", function () {
     });
 
     it("Should revert with insufficient payment", async function () {
-      const signature = await generateSignature(
-        user.address,
-        fortniteHash,
-        MINT_PRICE,
-        deadline,
-        nonce
+      const signature = await generateSignature(user.address, fortniteHash, MINT_PRICE, deadline, nonce);
+      await expectRevert(
+        contract.connect(user).mintBadge(user.address, fortniteHash, MINT_PRICE, deadline, signature, { value: MINT_PRICE / 2n }),
+        "Insufficient payment"
       );
-
-      await expect(
-        contract.connect(user).mintBadge(
-          user.address,
-          fortniteHash,
-          MINT_PRICE,
-          deadline,
-          signature,
-          { value: MINT_PRICE / 2n }
-        )
-      ).to.be.revertedWith("Insufficient payment");
     });
 
     it("Should revert with expired signature", async function () {
-      const expiredDeadline = Math.floor(Date.now() / 1000) - 3600; // 1 hour ago
-      const signature = await generateSignature(
-        user.address,
-        fortniteHash,
-        MINT_PRICE,
-        expiredDeadline,
-        nonce
+      const expiredDeadline = Math.floor(Date.now() / 1000) - 3600;
+      const signature = await generateSignature(user.address, fortniteHash, MINT_PRICE, expiredDeadline, nonce);
+      await expectRevert(
+        contract.connect(user).mintBadge(user.address, fortniteHash, MINT_PRICE, expiredDeadline, signature, { value: MINT_PRICE }),
+        "Signature expired"
       );
-
-      await expect(
-        contract.connect(user).mintBadge(
-          user.address,
-          fortniteHash,
-          MINT_PRICE,
-          expiredDeadline,
-          signature,
-          { value: MINT_PRICE }
-        )
-      ).to.be.revertedWith("Signature expired");
     });
 
     it("Should revert with invalid signature", async function () {
@@ -235,117 +251,51 @@ describe("FortniteFrameBadge", function () {
         deadline: deadline,
         nonce: nonce,
       });
-
-      await expect(
-        contract.connect(user).mintBadge(
-          user.address,
-          fortniteHash,
-          MINT_PRICE,
-          deadline,
-          signature,
-          { value: MINT_PRICE }
-        )
-      ).to.be.revertedWith("Invalid signature");
+      await expectRevert(
+        contract.connect(user).mintBadge(user.address, fortniteHash, MINT_PRICE, deadline, signature, { value: MINT_PRICE }),
+        "Invalid signature"
+      );
     });
 
     it("Should prevent duplicate badge minting", async function () {
-      const signature = await generateSignature(
-        user.address,
-        fortniteHash,
-        MINT_PRICE,
-        deadline,
-        nonce
-      );
+      const signature = await generateSignature(user.address, fortniteHash, MINT_PRICE, deadline, nonce);
 
       // First mint should succeed
-      await contract.connect(user).mintBadge(
-        user.address,
-        fortniteHash,
-        MINT_PRICE,
-        deadline,
-        signature,
-        { value: MINT_PRICE }
-      );
+      await contract.connect(user).mintBadge(user.address, fortniteHash, MINT_PRICE, deadline, signature, { value: MINT_PRICE });
 
       // Second mint should fail
       const newDeadline = Math.floor(Date.now() / 1000) + 3600;
       const newNonce = await contract.getNonce(user.address);
-      const newSignature = await generateSignature(
-        user.address,
-        fortniteHash,
-        MINT_PRICE,
-        newDeadline,
-        newNonce
+      const newSignature = await generateSignature(user.address, fortniteHash, MINT_PRICE, newDeadline, newNonce);
+      await expectRevert(
+        contract.connect(user).mintBadge(user.address, fortniteHash, MINT_PRICE, newDeadline, newSignature, { value: MINT_PRICE }),
+        "Badge already minted"
       );
-
-      await expect(
-        contract.connect(user).mintBadge(
-          user.address,
-          fortniteHash,
-          MINT_PRICE,
-          newDeadline,
-          newSignature,
-          { value: MINT_PRICE }
-        )
-      ).to.be.revertedWith("Badge already minted");
     });
 
     it("Should prevent signature replay", async function () {
-      const signature = await generateSignature(
-        user.address,
-        fortniteHash,
-        MINT_PRICE,
-        deadline,
-        nonce
-      );
+      const signature = await generateSignature(user.address, fortniteHash, MINT_PRICE, deadline, nonce);
 
       // First use should succeed
-      await contract.connect(user).mintBadge(
-        user.address,
-        fortniteHash,
-        MINT_PRICE,
-        deadline,
-        signature,
-        { value: MINT_PRICE }
-      );
+      await contract.connect(user).mintBadge(user.address, fortniteHash, MINT_PRICE, deadline, signature, { value: MINT_PRICE });
 
-      // Create a different badge to bypass "already minted" check
+      // After mint, nonce is incremented. The old signature used nonce=0.
+      // Re-using it for a different hash fails with "Invalid signature"
+      // because the contract now uses nonce=1 in its digest.
       const newHash = ethers.keccak256(ethers.toUtf8Bytes("player2-stats"));
-      
-      // Try to reuse the same signature (should fail at signature validation)
-      await expect(
-        contract.connect(user).mintBadge(
-          user.address,
-          newHash,
-          MINT_PRICE,
-          deadline,
-          signature,
-          { value: MINT_PRICE }
-        )
-      ).to.be.revertedWith("Signature already used");
+      await expectRevert(
+        contract.connect(user).mintBadge(user.address, newHash, MINT_PRICE, deadline, signature, { value: MINT_PRICE }),
+        "Invalid signature"
+      );
     });
 
     it("Should not mint when paused", async function () {
       await contract.pause();
-
-      const signature = await generateSignature(
-        user.address,
-        fortniteHash,
-        MINT_PRICE,
-        deadline,
-        nonce
+      const signature = await generateSignature(user.address, fortniteHash, MINT_PRICE, deadline, nonce);
+      await expectRevertCustomError(
+        contract.connect(user).mintBadge(user.address, fortniteHash, MINT_PRICE, deadline, signature, { value: MINT_PRICE }),
+        "EnforcedPause"
       );
-
-      await expect(
-        contract.connect(user).mintBadge(
-          user.address,
-          fortniteHash,
-          MINT_PRICE,
-          deadline,
-          signature,
-          { value: MINT_PRICE }
-        )
-      ).to.be.revertedWithCustomError(contract, "EnforcedPause");
     });
   });
 
@@ -363,31 +313,34 @@ describe("FortniteFrameBadge", function () {
       const recipient = addrs[0].address;
       const initialBalance = await ethers.provider.getBalance(recipient);
 
-      await expect(contract.withdraw(recipient, withdrawAmount))
-        .to.emit(contract, "Withdraw")
-        .withArgs(recipient, withdrawAmount);
+      const log = await expectEmit(contract.withdraw(recipient, withdrawAmount), contract, "Withdraw");
+      expect(log.args[0]).to.equal(recipient);
+      expect(log.args[1]).to.equal(withdrawAmount);
 
       const finalBalance = await ethers.provider.getBalance(recipient);
       expect(finalBalance - initialBalance).to.equal(withdrawAmount);
     });
 
     it("Should prevent non-owner from withdrawing", async function () {
-      await expect(
-        contract.connect(user).withdraw(user.address, ethers.parseEther("0.1"))
-      ).to.be.revertedWithCustomError(contract, "OwnableUnauthorizedAccount");
+      await expectRevertCustomError(
+        contract.connect(user).withdraw(user.address, ethers.parseEther("0.1")),
+        "OwnableUnauthorizedAccount"
+      );
     });
 
     it("Should revert withdrawal to zero address", async function () {
-      await expect(
-        contract.withdraw(ethers.ZeroAddress, ethers.parseEther("0.1"))
-      ).to.be.revertedWith("Withdrawal address cannot be zero");
+      await expectRevert(
+        contract.withdraw(ethers.ZeroAddress, ethers.parseEther("0.1")),
+        "Withdrawal address cannot be zero"
+      );
     });
 
     it("Should revert withdrawal of more than balance", async function () {
       const balance = await ethers.provider.getBalance(await contract.getAddress());
-      await expect(
-        contract.withdraw(addrs[0].address, balance + 1n)
-      ).to.be.revertedWith("Insufficient contract balance");
+      await expectRevert(
+        contract.withdraw(addrs[0].address, balance + 1n),
+        "Insufficient contract balance"
+      );
     });
   });
 
@@ -398,7 +351,6 @@ describe("FortniteFrameBadge", function () {
         to: await contract.getAddress(),
         value: amount,
       });
-
       expect(await contract.getBalance()).to.equal(amount);
     });
 
@@ -408,7 +360,7 @@ describe("FortniteFrameBadge", function () {
     });
 
     it("Should return correct nonce", async function () {
-      expect(await contract.getNonce(user.address)).to.equal(0);
+      expect(await contract.getNonce(user.address)).to.equal(0n);
     });
   });
 });

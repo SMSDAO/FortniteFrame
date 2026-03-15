@@ -121,7 +121,7 @@ function FrameContent() {
     alert('⚠️ Placeholder implementation. This will send ETH to the contract but will NOT mint a badge. See INTEGRATION.md for proper implementation.');
     
     sendTransaction({
-      to: contractAddress,
+      to: contractAddress as `0x${string}`,
       value: parseEther('0.001'),
     });
   };

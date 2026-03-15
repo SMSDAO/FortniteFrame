@@ -1,8 +1,10 @@
-require("@nomicfoundation/hardhat-toolbox");
-require("dotenv/config");
+import hardhatEthers from "@nomicfoundation/hardhat-ethers";
+import hardhatMocha from "@nomicfoundation/hardhat-mocha";
+import "dotenv/config";
 
 /** @type import('hardhat/config').HardhatUserConfig */
-module.exports = {
+export default {
+  plugins: [hardhatEthers, hardhatMocha],
   solidity: {
     version: "0.8.26",
     settings: {
@@ -14,20 +16,14 @@ module.exports = {
   },
   networks: {
     base: {
+      type: "http",
       url: process.env.BASE_RPC_URL || "https://mainnet.base.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 8453,
     },
     baseSepolia: {
+      type: "http",
       url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
-      chainId: 84532,
-    },
-  },
-  etherscan: {
-    apiKey: {
-      base: process.env.BASESCAN_API_KEY || "",
-      baseSepolia: process.env.BASESCAN_API_KEY || "",
     },
   },
 };

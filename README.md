@@ -1,8 +1,20 @@
 # FortniteFrame
 
-A Farcaster Frame (v2) project that integrates Fortnite game data with smart wallet transactions, optimized for Vercel deployment.
+> **v1.0.0 — Production Ready Enterprise Release**
+
+A Farcaster Frame (v2) project that integrates Fortnite game data with smart wallet transactions, enterprise dashboards, RBAC authentication, and billing controls — optimized for Vercel deployment on the Base blockchain.
 
 ![FortniteFrame UI](https://github.com/user-attachments/assets/34c56a3c-fecf-4c9d-b057-bc24803ef780)
+
+## UI Preview
+
+### User Dashboard
+
+<img src="docs/assets/ui/user-dashboard.png" alt="User Dashboard — overview, metered usage, activity feed, notifications" width="100%" />
+
+### Admin Dashboard
+
+<img src="docs/assets/ui/admin-dashboard.png" alt="Admin Dashboard — system overview, user management, billing, audit logs" width="100%" />
 
 ## Features
 
@@ -11,37 +23,58 @@ A Farcaster Frame (v2) project that integrates Fortnite game data with smart wal
 - 💰 **Smart Wallet Support**: Integrated with `wagmi` and `viem` for blockchain transactions
 - 🎖️ **NFT Badge Minting**: Trigger smart wallet transactions to mint achievement badges via smart contract
 - 📝 **Smart Contract**: Production-ready Solidity contract for Base blockchain with EIP-712 signatures
-- 🔒 **Secure & Audited**: Uses OpenZeppelin libraries and battle-tested patterns
-- 🏥 **Auto-Heal Script**: Health monitoring script for Vercel deployments
-- ⚡ **Next.js App Router**: Modern Next.js 14 with App Router conventions
-- 📱 **Responsive UI**: Clean, user-friendly interface
+- 🔒 **Enterprise Auth**: JWT-based login, bcrypt passwords, refresh tokens, RBAC (Admin/Developer/User/Auditor)
+- 📊 **Enterprise Dashboards**: User dashboard with metered usage, Admin dashboard with billing controls and audit logs, Developer dashboard with API monitoring
+- 🛡️ **Security Headers**: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy
+- 🏥 **Health & Metrics**: `/api/health` and `/api/metrics` endpoints with structured observability
+- ⚡ **Next.js App Router**: Modern Next.js 16 with App Router conventions
+- 📱 **Responsive Neo-Glow UI**: Dark theme with gradient accents, glow effects, and mobile-friendly navigation
+- 🔄 **CI/CD Pipelines**: GitHub Actions for lint, typecheck, build, Hardhat tests, security scanning, and release
 
 ## Project Structure
 
 ```
 FortniteFrame/
+├── .github/workflows/
+│   ├── ci.yml                       # Lint, build, Hardhat test, security scan
+│   └── release.yml                  # Release pipeline (v* tags)
 ├── contracts/
-│   ├── FortniteFrameBadge.sol      # Smart contract for badge minting
+│   ├── FortniteFrameBadge.sol       # Smart contract for badge minting
 │   └── README.md                    # Contract documentation
 ├── scripts/
 │   └── deploy.js                    # Contract deployment script
 ├── test/
-│   └── FortniteFrameBadge.test.js  # Contract test suite
+│   └── FortniteFrameBadge.test.js  # Contract test suite (Hardhat)
 ├── src/
 │   ├── app/
 │   │   ├── api/
-│   │   │   └── fortnite/
-│   │   │       └── route.ts          # API endpoint for Fortnite stats
-│   │   ├── layout.tsx                # Root layout
-│   │   └── page.tsx                  # Main Frame UI
-│   ├── lib/
-│   │   └── fortnite.ts               # Fortnite API utility
-│   └── scripts/
-│       └── auto-heal.ts              # Health monitoring script
+│   │   │   ├── auth/                # login / logout / me
+│   │   │   ├── fortnite/            # Fortnite stats proxy
+│   │   │   ├── health/              # Health check
+│   │   │   ├── metrics/             # System metrics (Dev+ role)
+│   │   │   ├── billing/             # Billing records
+│   │   │   └── admin/users/         # User CRUD (Admin role)
+│   │   ├── layout.tsx               # Root layout + Navigation
+│   │   ├── page.tsx                 # Home / Farcaster Frame UI
+│   │   ├── login/                   # Authentication page
+│   │   ├── dashboard/               # User dashboard (RBAC: all)
+│   │   ├── admin/                   # Admin dashboard (RBAC: Admin)
+│   │   ├── developer/               # Developer dashboard (RBAC: Dev+)
+│   │   ├── docs/                    # Documentation page
+│   │   └── globals.css              # Neo-Glow design system
+│   ├── components/
+│   │   └── Navigation.tsx           # Responsive tab navigation
+│   └── lib/
+│       ├── auth.ts                  # JWT + RBAC utilities
+│       ├── db.ts                    # In-memory data layer (swap for Prisma+PG)
+│       └── fortnite.ts              # Fortnite API client
+├── docs/assets/ui/                  # UI screenshots
+├── .env.example                     # Environment variable reference
+├── CHANGELOG.md                     # Version history
 ├── hardhat.config.js                # Hardhat configuration
+├── next.config.js                   # Next.js + security headers
 ├── package.json
 ├── tsconfig.json
-├── next.config.js
 ├── DEPLOYMENT.md                    # Complete deployment guide
 └── README.md
 ```
