@@ -1,18 +1,23 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import Navigation from '@/components/Navigation';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'FortniteFrame - Farcaster Frame v2',
-  description: 'A Farcaster Frame integrating Fortnite stats and smart wallet transactions',
+  title: 'FortniteFrame — Enterprise Platform',
+  description: 'Enterprise Farcaster Frame with Fortnite stats, smart wallet, RBAC, dashboards, and billing.',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export const viewport: Viewport = {
+  themeColor: '#6366f1',
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body className="app-layout">
+        <Navigation />
+        <main className="main-content">{children}</main>
+      </body>
     </html>
   );
 }

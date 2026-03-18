@@ -1,4 +1,4 @@
-const hre = require("hardhat");
+import hre from "hardhat";
 
 /**
  * Deploy script for FortniteFrameBadge contract

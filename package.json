@@ -1,12 +1,14 @@
 {
   "name": "fortnite-frame",
-  "version": "0.1.0",
+  "version": "1.0.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "heal": "tsx src/scripts/auto-heal.ts",
     "compile": "hardhat compile",
     "deploy:base": "hardhat run scripts/deploy.js --network base",
@@ -19,21 +21,37 @@
     "@openzeppelin/contracts": "^5.1.0",
     "@tanstack/react-query": "^5.17.19",
     "axios": "^1.13.5",
+    "bcryptjs": "^3.0.3",
     "fortnite-replay-info": "^1.0.0",
+    "jsonwebtoken": "^9.0.3",
     "next": "^16.1.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "viem": "^2.7.6",
-    "wagmi": "^2.4.1"
+    "wagmi": "^2.4.1",
+    "zod": "3.24.4"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
+    "@eslint/js": "^9.0.0",
+    "@nomicfoundation/hardhat-ethers": "^4.0.6",
+    "@nomicfoundation/hardhat-mocha": "^3.0.9",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.47",
     "@types/react-dom": "^18.2.18",
+    "chai": "^4.5.0",
     "dotenv": "^16.4.1",
+    "eslint": "^9.39.4",
+    "globals": "^17.4.0",
     "hardhat": "^3.1.12",
+    "mocha": "^11.7.5",
+    "solc": "^0.8.26",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "typescript-eslint": "^8.57.0"
+  },
+  "overrides": {
+    "zod": "3.24.4"
   }
 }

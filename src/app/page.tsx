@@ -5,7 +5,7 @@ import sdk from '@farcaster/frame-sdk';
 import { createConfig, http, useAccount, useConnect, useSendTransaction, WagmiProvider } from 'wagmi';
 import { base } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { parseEther } from 'viem';
+import { parseEther, isAddress } from 'viem';
 import axios from 'axios';
 
 // Configure Wagmi
@@ -108,7 +108,12 @@ function FrameContent() {
       return;
     }
 
-    const contractAddress = envContractAddress;
+    if (!isAddress(envContractAddress)) {
+      alert('⚠️ NEXT_PUBLIC_CONTRACT_ADDRESS is not a valid Ethereum address. Please set a valid address in your environment variables.');
+      return;
+    }
+
+    const contractAddress = envContractAddress as `0x${string}`;
 
     // WARNING: This is a placeholder implementation that will fail in production
     // This sends ETH directly to the contract without calling mintBadge()
