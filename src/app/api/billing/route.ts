@@ -10,10 +10,16 @@ const addSchema = z.object({
   currency: z.string().default('USD'),
 });
 
+function extractToken(request: NextRequest): string | null {
+  return request.cookies.get('accessToken')?.value
+    ?? (request.headers.get('authorization')?.startsWith('Bearer ')
+      ? request.headers.get('authorization')!.slice(7)
+      : null);
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const token = extractToken(request);
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const payload = verifyToken(token);
@@ -28,8 +34,7 @@ export async function GET(request: NextRequest) {
     const records = getBillingRecords(targetUserId, 100);
     const auditLogs = isAdmin ? getAuditLogs(50) : [];
 
-    // Compute totals per user for admin
-    const users = isAdmin ? [] : null;
+    // Per-user totals for admin view
     const summary = isAdmin
       ? records.reduce<Record<string, number>>((acc, r) => {
           acc[r.userId] = (acc[r.userId] || 0) + r.amount;
@@ -37,7 +42,7 @@ export async function GET(request: NextRequest) {
         }, {})
       : null;
 
-    return NextResponse.json({ records, auditLogs, users, summary });
+    return NextResponse.json({ records, auditLogs, summary });
   } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -45,8 +50,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const token = extractToken(request);
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const payload = verifyToken(token);
@@ -54,7 +58,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
+
     const parsed = addSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });

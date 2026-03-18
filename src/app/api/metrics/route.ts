@@ -4,8 +4,10 @@ import { getSystemMetrics } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+    const token = request.cookies.get('accessToken')?.value
+      ?? (request.headers.get('authorization')?.startsWith('Bearer ')
+        ? request.headers.get('authorization')!.slice(7)
+        : null);
 
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

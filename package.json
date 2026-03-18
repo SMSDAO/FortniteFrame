@@ -28,10 +28,11 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "viem": "^2.7.6",
-    "wagmi": "^2.4.1"
+    "wagmi": "^2.4.1",
+    "zod": "3.24.4"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@eslint/js": "^9.0.0",
     "@nomicfoundation/hardhat-ethers": "^4.0.6",
     "@nomicfoundation/hardhat-mocha": "^3.0.9",
     "@types/bcryptjs": "^2.4.6",
@@ -48,8 +49,7 @@
     "solc": "^0.8.26",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
-    "typescript-eslint": "^8.57.0",
-    "zod": "3.24.4"
+    "typescript-eslint": "^8.57.0"
   },
   "overrides": {
     "zod": "3.24.4"

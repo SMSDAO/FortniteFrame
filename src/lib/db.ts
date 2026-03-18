@@ -7,6 +7,7 @@
  */
 
 import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
 
 export type Role = 'Admin' | 'Developer' | 'User' | 'Auditor';
 
@@ -22,6 +23,9 @@ export interface User {
   usageCount: number;
   usageLimit: number;
 }
+
+/** Public view of a User — passwordHash is never included. */
+export type PublicUser = Omit<User, 'passwordHash'>;
 
 export interface AuditLog {
   id: string;
@@ -41,51 +45,51 @@ export interface BillingRecord {
   timestamp: string;
 }
 
-// Seed admin user (change password in production via env)
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-const adminHash = bcrypt.hashSync(ADMIN_PASSWORD, 10);
-const devHash = bcrypt.hashSync('dev123', 10);
-const userHash = bcrypt.hashSync('user123', 10);
-
 // In-memory store (replace with Prisma in production)
-const users: User[] = [
-  {
-    id: '1',
-    email: 'admin@fortniteframe.app',
-    passwordHash: adminHash,
-    name: 'Admin User',
-    role: 'Admin',
-    createdAt: new Date().toISOString(),
-    lastLogin: null,
-    active: true,
-    usageCount: 0,
-    usageLimit: -1, // unlimited
-  },
-  {
-    id: '2',
-    email: 'dev@fortniteframe.app',
-    passwordHash: devHash,
-    name: 'Dev User',
-    role: 'Developer',
-    createdAt: new Date().toISOString(),
-    lastLogin: null,
-    active: true,
-    usageCount: 42,
-    usageLimit: 10000,
-  },
-  {
-    id: '3',
-    email: 'user@fortniteframe.app',
-    passwordHash: userHash,
-    name: 'Regular User',
-    role: 'User',
-    createdAt: new Date().toISOString(),
-    lastLogin: null,
-    active: true,
-    usageCount: 15,
-    usageLimit: 500,
-  },
-];
+const users: User[] = [];
+
+// Seed demo users only outside of production
+if (process.env.NODE_ENV !== 'production') {
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+  users.push(
+    {
+      id: randomUUID(),
+      email: 'admin@fortniteframe.app',
+      passwordHash: bcrypt.hashSync(ADMIN_PASSWORD, 10),
+      name: 'Admin User',
+      role: 'Admin',
+      createdAt: new Date().toISOString(),
+      lastLogin: null,
+      active: true,
+      usageCount: 0,
+      usageLimit: -1, // unlimited
+    },
+    {
+      id: randomUUID(),
+      email: 'dev@fortniteframe.app',
+      passwordHash: bcrypt.hashSync('dev123', 10),
+      name: 'Dev User',
+      role: 'Developer',
+      createdAt: new Date().toISOString(),
+      lastLogin: null,
+      active: true,
+      usageCount: 42,
+      usageLimit: 10000,
+    },
+    {
+      id: randomUUID(),
+      email: 'user@fortniteframe.app',
+      passwordHash: bcrypt.hashSync('user123', 10),
+      name: 'Regular User',
+      role: 'User',
+      createdAt: new Date().toISOString(),
+      lastLogin: null,
+      active: true,
+      usageCount: 15,
+      usageLimit: 500,
+    }
+  );
+}
 
 const auditLogs: AuditLog[] = [];
 const billingRecords: BillingRecord[] = [];
@@ -100,8 +104,9 @@ export function findUserById(id: string): User | undefined {
   return users.find((u) => u.id === id);
 }
 
-export function getAllUsers(): User[] {
-  return users.map(({ passwordHash: _ph, ...rest }) => ({ ...rest, passwordHash: '' }));
+/** Returns all users without password hashes. */
+export function getAllUsers(): PublicUser[] {
+  return users.map(({ passwordHash: _omit, ...rest }) => rest);
 }
 
 export function updateUserLastLogin(id: string): void {
@@ -111,15 +116,19 @@ export function updateUserLastLogin(id: string): void {
   }
 }
 
-export function createUser(data: Omit<User, 'id' | 'passwordHash'> & { password: string }): User {
+export function createUser(data: Omit<User, 'id' | 'passwordHash'> & { password: string }): PublicUser {
+  if (findUserByEmail(data.email)) {
+    throw new Error('Email already in use');
+  }
   const { password, ...rest } = data;
   const newUser: User = {
-    id: String(Date.now()),
+    id: randomUUID(),
     ...rest,
     passwordHash: bcrypt.hashSync(password, 10),
   };
   users.push(newUser);
-  return newUser;
+  const { passwordHash: _omit, ...publicUser } = newUser;
+  return publicUser;
 }
 
 export function updateUserRole(id: string, role: Role): boolean {
@@ -140,7 +149,7 @@ export function incrementUsage(id: string): void {
 
 export function addAuditLog(entry: Omit<AuditLog, 'id' | 'timestamp'>): AuditLog {
   const log: AuditLog = {
-    id: String(Date.now()),
+    id: randomUUID(),
     ...entry,
     timestamp: new Date().toISOString(),
   };
@@ -158,7 +167,7 @@ export function getAuditLogs(limit = 50): AuditLog[] {
 
 export function addBillingRecord(entry: Omit<BillingRecord, 'id' | 'timestamp'>): BillingRecord {
   const record: BillingRecord = {
-    id: String(Date.now()),
+    id: randomUUID(),
     ...entry,
     timestamp: new Date().toISOString(),
   };

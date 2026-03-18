@@ -9,15 +9,28 @@ const schema = z.object({
   password: z.string().min(6),
 });
 
+const COOKIE_OPTS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === 'production',
+  sameSite: 'strict' as const,
+  path: '/',
+};
+
 export async function POST(request: NextRequest) {
+  // Parse body — return 400 for malformed JSON, not 500
+  let body: unknown;
   try {
-    const body = await request.json();
-    const parsed = schema.safeParse(body);
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
 
-    if (!parsed.success) {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
-    }
+  const parsed = schema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+  }
 
+  try {
     const { email, password } = parsed.data;
 
     const user = findUserByEmail(email);
@@ -48,17 +61,19 @@ export async function POST(request: NextRequest) {
       ip: request.headers.get('x-forwarded-for') || null,
     });
 
+    // Both tokens are stored in httpOnly cookies — never exposed to JS
     const response = NextResponse.json({
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
-      accessToken,
+    });
+
+    response.cookies.set('accessToken', accessToken, {
+      ...COOKIE_OPTS,
+      maxAge: 60 * 15, // 15 minutes
     });
 
     response.cookies.set('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      ...COOKIE_OPTS,
       maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/',
     });
 
     return response;

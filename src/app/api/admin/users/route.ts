@@ -17,8 +17,10 @@ const updateRoleSchema = z.object({
 });
 
 function getAdminPayload(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const token = request.cookies.get('accessToken')?.value
+    ?? (request.headers.get('authorization')?.startsWith('Bearer ')
+      ? request.headers.get('authorization')!.slice(7)
+      : null);
   if (!token) throw new Error('Unauthorized');
   const payload = verifyToken(token);
   if (payload.role !== 'Admin') throw new Error('Forbidden');
@@ -44,14 +46,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
-    const newUser = createUser({
-      ...parsed.data,
-      createdAt: new Date().toISOString(),
-      lastLogin: null,
-      active: true,
-      usageCount: 0,
-      usageLimit: 500,
-    });
+    let newUser;
+    try {
+      newUser = createUser({
+        ...parsed.data,
+        createdAt: new Date().toISOString(),
+        lastLogin: null,
+        active: true,
+        usageCount: 0,
+        usageLimit: 500,
+      });
+    } catch (createErr) {
+      const createMsg = createErr instanceof Error ? createErr.message : 'Error';
+      if (createMsg.includes('already in use')) {
+        return NextResponse.json({ error: createMsg }, { status: 409 });
+      }
+      throw createErr;
+    }
 
     addAuditLog({
       userId: adminPayload.userId,

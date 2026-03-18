@@ -91,7 +91,13 @@ export default function DeveloperDashboardPage() {
       const res = await fetch(testUrl, opts);
       const latency = Date.now() - start;
       const data = await res.text();
-      setTestResult(JSON.stringify({ status: res.status, latency: `${latency}ms`, body: JSON.parse(data) }, null, 2));
+      let parsedBody: unknown;
+      try {
+        parsedBody = JSON.parse(data);
+      } catch {
+        parsedBody = data;
+      }
+      setTestResult(JSON.stringify({ status: res.status, latency: `${latency}ms`, body: parsedBody }, null, 2));
     } catch (e) {
       setTestResult(`Error: ${e instanceof Error ? e.message : 'Unknown error'}`);
     } finally {
@@ -329,7 +335,7 @@ export default function DeveloperDashboardPage() {
             <h2 className="section-title">📦 Build Info</h2>
             {[
               { label: 'Framework', value: 'Next.js (App Router)' },
-              { label: 'Node.js', value: process.version || '24.x' },
+              { label: 'Node.js', value: '24.x' },
               { label: 'Runtime', value: 'Edge / Node.js' },
               { label: 'Deploy Target', value: 'Vercel' },
               { label: 'Smart Contract', value: 'Base (EVM L2)' },

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
+const IS_DEMO = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -20,6 +22,8 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // Credentials: 'include' ensures cookies (access + refresh tokens) are received
+        credentials: 'include',
         body: JSON.stringify({ email, password }),
       });
 
@@ -30,7 +34,7 @@ export default function LoginPage() {
       }
 
       const data = await res.json();
-      localStorage.setItem('accessToken', data.accessToken);
+      // Tokens are stored in httpOnly cookies by the server — never in JS-accessible storage
 
       // Redirect by role
       if (data.user.role === 'Admin') {
@@ -101,12 +105,14 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div style={{ marginTop: '24px', padding: '16px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', fontSize: '12px', color: 'var(--text-muted)' }}>
-          <p style={{ fontWeight: 600, marginBottom: '8px', color: 'var(--text-secondary)' }}>Demo credentials</p>
-          <p>Admin: admin@fortniteframe.app / admin123</p>
-          <p>Dev: dev@fortniteframe.app / dev123</p>
-          <p>User: user@fortniteframe.app / user123</p>
-        </div>
+        {IS_DEMO && (
+          <div style={{ marginTop: '24px', padding: '16px', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', fontSize: '12px', color: 'var(--text-muted)' }}>
+            <p style={{ fontWeight: 600, marginBottom: '8px', color: 'var(--text-secondary)' }}>Demo credentials</p>
+            <p>Admin: admin@fortniteframe.app / admin123</p>
+            <p>Dev: dev@fortniteframe.app / dev123</p>
+            <p>User: user@fortniteframe.app / user123</p>
+          </div>
+        )}
 
         <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px', color: 'var(--text-muted)' }}>
           <Link href="/" style={{ color: 'var(--accent-primary)' }}>← Back to home</Link>
